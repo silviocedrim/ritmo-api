@@ -1,0 +1,198 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ═══════════════════════════════════════
+// USUÁRIO
+// ═══════════════════════════════════════
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  divisoesTreino   DivisaoTreino[]
+  registrosDiarios RegistroDiario[]
+  metas            Meta[]
+
+  @@map("users")
+}
+
+// ═══════════════════════════════════════
+// DIVISÃO DE TREINO
+// ═══════════════════════════════════════
+
+model DivisaoTreino {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  letra     String
+  nome      String
+  descricao String?
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  user              User               @relation(fields: [userId], references: [id])
+  treinosMusculacao TreinoMusculacao[]
+
+  @@unique([userId, letra])
+  @@map("divisoes_treino")
+}
+
+// ═══════════════════════════════════════
+// REGISTRO DIÁRIO
+// ═══════════════════════════════════════
+
+model RegistroDiario {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  data      DateTime @db.Date
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user             User              @relation(fields: [userId], references: [id])
+  treinoMusculacao TreinoMusculacao?
+  treinoCardio     TreinoCardio?
+  refeicoes        Refeicao[]
+  excecaoAlimentar ExcecaoAlimentar?
+  registrosAgua    RegistroAgua[]
+  registroPeso     RegistroPeso?
+
+  @@unique([userId, data])
+  @@map("registros_diarios")
+}
+
+// ═══════════════════════════════════════
+// TREINO MUSCULAÇÃO
+// ═══════════════════════════════════════
+
+model TreinoMusculacao {
+  id               Int      @id @default(autoincrement())
+  registroDiarioId Int      @unique
+  divisaoTreinoId  Int
+  feito            Boolean  @default(false)
+  createdAt        DateTime @default(now())
+
+  registroDiario RegistroDiario @relation(fields: [registroDiarioId], references: [id])
+  divisaoTreino  DivisaoTreino  @relation(fields: [divisaoTreinoId], references: [id])
+
+  @@map("treinos_musculacao")
+}
+
+// ═══════════════════════════════════════
+// TREINO CARDIO
+// ═══════════════════════════════════════
+
+model TreinoCardio {
+  id               Int      @id @default(autoincrement())
+  registroDiarioId Int      @unique
+  feito            Boolean  @default(false)
+  tipo             String?
+  duracaoMinutos   Int?
+  createdAt        DateTime @default(now())
+
+  registroDiario RegistroDiario @relation(fields: [registroDiarioId], references: [id])
+
+  @@map("treinos_cardio")
+}
+
+// ═══════════════════════════════════════
+// REFEIÇÃO
+// ═══════════════════════════════════════
+
+enum TipoRefeicao {
+  CAFE_DA_MANHA
+  ALMOCO
+  JANTAR
+  LANCHE_CEIA
+}
+
+model Refeicao {
+  id               Int          @id @default(autoincrement())
+  registroDiarioId Int
+  tipo             TipoRefeicao
+  feito            Boolean      @default(false)
+  createdAt        DateTime     @default(now())
+
+  registroDiario RegistroDiario @relation(fields: [registroDiarioId], references: [id])
+
+  @@unique([registroDiarioId, tipo])
+  @@map("refeicoes")
+}
+
+// ═══════════════════════════════════════
+// EXCEÇÃO ALIMENTAR
+// ═══════════════════════════════════════
+
+model ExcecaoAlimentar {
+  id               Int      @id @default(autoincrement())
+  registroDiarioId Int      @unique
+  descricao        String
+  createdAt        DateTime @default(now())
+
+  registroDiario RegistroDiario @relation(fields: [registroDiarioId], references: [id])
+
+  @@map("excecoes_alimentares")
+}
+
+// ═══════════════════════════════════════
+// ÁGUA
+// ═══════════════════════════════════════
+
+model RegistroAgua {
+  id               Int      @id @default(autoincrement())
+  registroDiarioId Int
+  quantidade       Int
+  hora             DateTime @default(now())
+
+  registroDiario RegistroDiario @relation(fields: [registroDiarioId], references: [id])
+
+  @@map("registros_agua")
+}
+
+// ═══════════════════════════════════════
+// PESO
+// ═══════════════════════════════════════
+
+model RegistroPeso {
+  id               Int      @id @default(autoincrement())
+  registroDiarioId Int      @unique
+  peso             Decimal  @db.Decimal(5, 2)
+  createdAt        DateTime @default(now())
+
+  registroDiario RegistroDiario @relation(fields: [registroDiarioId], references: [id])
+
+  @@map("registros_peso")
+}
+
+// ═══════════════════════════════════════
+// METAS
+// ═══════════════════════════════════════
+
+enum TipoMeta {
+  TREINOS_POR_SEMANA
+  REFEICOES_CONSECUTIVAS
+  AGUA_DIARIA
+  PESO_ALVO
+}
+
+model Meta {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  tipo      TipoMeta
+  valor     Decimal
+  dataAlvo  DateTime?
+  ativo     Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("metas")
+}
