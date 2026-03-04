@@ -35,6 +35,8 @@ model DivisaoTreino {
   letra     String
   nome      String
   descricao String?
+  emoji     String   @default("💪")
+  musculos  String[] @default([])
   ativo     Boolean  @default(true)
   createdAt DateTime @default(now())
 
@@ -44,6 +46,7 @@ model DivisaoTreino {
   @@unique([userId, letra])
   @@map("divisoes_treino")
 }
+
 
 // ═══════════════════════════════════════
 // REGISTRO DIÁRIO

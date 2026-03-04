@@ -2,40 +2,52 @@ import { prisma } from '../../../database/prisma'
 import { AppError } from '../../../shared/errors/AppError'
 
 export class DivisaoService {
-  async create(userId: number, letra: string, nome: string, descricao?: string) {
-  const existente = await prisma.divisaoTreino.findFirst({ // 👈 findFirst no lugar de findUnique
-    where: {
-      userId,
-      letra: letra.toUpperCase(),
-      ativo: true, // 👈 só bloqueia se estiver ativo
-    },
-  })
 
-  if (existente) {
-    throw new AppError(`Já existe uma divisão com a letra "${letra.toUpperCase()}"`, 409)
-  }
+  async create(
+    userId: number,
+    letra: string,
+    nome: string,
+    descricao?: string,
+    emoji?: string,
+    musculos?: string[]
+  ) {
+    const existente = await prisma.divisaoTreino.findFirst({
+      where: { userId, letra: letra.toUpperCase(), ativo: true },
+    })
 
-  // Se existir um inativo com a mesma letra, reativa ele
-  const inativo = await prisma.divisaoTreino.findFirst({
-    where: { userId, letra: letra.toUpperCase(), ativo: false },
-  })
+    if (existente) {
+      throw new AppError(`Já existe uma divisão com a letra "${letra.toUpperCase()}"`, 409)
+    }
 
-  if (inativo) {
-    return prisma.divisaoTreino.update({
-      where: { id: inativo.id },
-      data: { nome, descricao, ativo: true },
+    // Se existir inativo com mesma letra, reativa
+    const inativo = await prisma.divisaoTreino.findFirst({
+      where: { userId, letra: letra.toUpperCase(), ativo: false },
+    })
+
+    if (inativo) {
+      return prisma.divisaoTreino.update({
+        where: { id: inativo.id },
+        data: {
+          nome,
+          descricao,
+          emoji: emoji ?? '💪',
+          musculos: musculos ?? [],
+          ativo: true,
+        },
+      })
+    }
+
+    return prisma.divisaoTreino.create({
+      data: {
+        userId,
+        letra: letra.toUpperCase(),
+        nome,
+        descricao,
+        emoji: emoji ?? '💪',
+        musculos: musculos ?? [],
+      },
     })
   }
-
-  return prisma.divisaoTreino.create({
-    data: {
-      userId,
-      letra: letra.toUpperCase(),
-      nome,
-      descricao,
-    },
-  })
-}
 
   async findAll(userId: number) {
     return prisma.divisaoTreino.findMany({
@@ -56,7 +68,17 @@ export class DivisaoService {
     return divisao
   }
 
-  async update(userId: number, id: number, dados: { letra?: string; nome?: string; descricao?: string }) {
+  async update(
+    userId: number,
+    id: number,
+    dados: {
+      letra?: string
+      nome?: string
+      descricao?: string
+      emoji?: string
+      musculos?: string[]
+    }
+  ) {
     await this.findById(userId, id)
 
     if (dados.letra) {
