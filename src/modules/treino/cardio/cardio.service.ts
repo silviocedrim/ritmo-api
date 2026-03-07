@@ -5,6 +5,7 @@ interface CreateCardioDTO {
   registroDiarioId: number
   tipo?: string
   duracaoMinutos?: number
+  feito?: boolean
 }
 
 interface UpdateCardioDTO {
@@ -32,6 +33,7 @@ export class CardioService {
         registroDiarioId: data.registroDiarioId,
         tipo: data.tipo,
         duracaoMinutos: data.duracaoMinutos,
+        feito: data.feito ?? false,
       },
     })
   }

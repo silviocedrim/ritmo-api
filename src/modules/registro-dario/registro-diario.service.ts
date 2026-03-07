@@ -4,22 +4,17 @@ import { AppError } from '../../shared/errors/AppError'
 export class RegistroDiarioService {
 
   async findOrCreate(userId: number, data: Date) {
-    const existing = await prisma.registroDiario.findUnique({
-      where: { userId_data: { userId, data } },
-      include: this.defaultInclude(),
-    })
-
-    if (existing) return existing
-
-    return prisma.registroDiario.create({
-      data: { userId, data },
+    return prisma.registroDiario.upsert({
+      where:  { userId_data: { userId, data } },
+      create: { userId, data },
+      update: {},
       include: this.defaultInclude(),
     })
   }
 
   async findAll(userId: number) {
     return prisma.registroDiario.findMany({
-      where: { userId },
+      where:   { userId },
       orderBy: { data: 'desc' },
       include: this.defaultInclude(),
     })
@@ -27,7 +22,7 @@ export class RegistroDiarioService {
 
   async findById(userId: number, id: number) {
     const registro = await prisma.registroDiario.findFirst({
-      where: { id, userId },
+      where:   { id, userId },
       include: this.defaultInclude(),
     })
 
@@ -38,7 +33,7 @@ export class RegistroDiarioService {
 
   async findByData(userId: number, data: Date) {
     const registro = await prisma.registroDiario.findUnique({
-      where: { userId_data: { userId, data } },
+      where:   { userId_data: { userId, data } },
       include: this.defaultInclude(),
     })
 
@@ -59,12 +54,12 @@ export class RegistroDiarioService {
 
   private defaultInclude() {
     return {
-      treinoMusculacao: true,
-      treinoCardio: true,
-      refeicoes: true,
+      treinoMusculacao: { include: { divisaoTreino: true } }, // ← corrigido
+      treinoCardio:     true,
+      refeicoes:        true,
       excecaoAlimentar: true,
-      registrosAgua: true,
-      registroPeso: true,
+      registrosAgua:    true,
+      registroPeso:     true,
     }
   }
 }

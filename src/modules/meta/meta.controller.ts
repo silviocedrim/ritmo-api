@@ -65,3 +65,15 @@ export async function remove(req: FastifyRequest<{ Params: IdParams }>, reply: F
   await service.remove(userId, id)
   return reply.status(204).send()
 }
+
+export async function progressoTreinosSemana(req: FastifyRequest, reply: FastifyReply) {
+  const userId = req.user.sub
+  const data = await service.progressoTreinosSemana(userId)
+  return reply.send(data)
+}
+
+export async function progressoRefeicoes(req: FastifyRequest, reply: FastifyReply) {
+  const userId = req.user.sub
+  const data = await service.progressoRefeicoes(userId)
+  return reply.send(data)
+}

@@ -7,6 +7,7 @@ interface CreateBody {
   registroDiarioId: number
   tipo?: string
   duracaoMinutos?: number
+  feito?: boolean 
 }
 
 interface UpdateBody {

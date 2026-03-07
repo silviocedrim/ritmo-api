@@ -6,6 +6,7 @@ const service = new TreinoMusculacaoService()
 interface CreateBody {
   registroDiarioId: number
   divisaoTreinoId: number
+  feito?: boolean
 }
 
 interface UpdateBody {
@@ -18,9 +19,9 @@ interface IdParams {
 
 export async function create(req: FastifyRequest<{ Body: CreateBody }>, reply: FastifyReply) {
   const userId = req.user.sub
-  const { registroDiarioId, divisaoTreinoId } = req.body
+  const { registroDiarioId, divisaoTreinoId, feito } = req.body
 
-  const treino = await service.create(userId, registroDiarioId, divisaoTreinoId)
+  const treino = await service.create(userId, registroDiarioId, divisaoTreinoId, feito ?? false)
 
   return reply.status(201).send({ treino })
 }
