@@ -1,6 +1,7 @@
 import { FastifyRequest, FastifyReply } from 'fastify'
-import { TipoMeta } from '@prisma/client'
 import { MetaService } from './meta.service'
+import type { $Enums } from '@prisma/client'
+type TipoMeta = $Enums.TipoMeta
 
 const service = new MetaService()
 
@@ -35,19 +36,22 @@ export async function create(req: FastifyRequest<{ Body: CreateBody }>, reply: F
 
 export async function list(req: FastifyRequest, reply: FastifyReply) {
   const userId = req.user.sub
-  const metas = await service.list(userId)
+  const metas  = await service.list(userId)
   return reply.send({ metas })
 }
 
 export async function listAtivas(req: FastifyRequest, reply: FastifyReply) {
   const userId = req.user.sub
-  const metas = await service.listAtivas(userId)
+  const metas  = await service.listAtivas(userId)
   return reply.send({ metas })
 }
 
-export async function update(req: FastifyRequest<{ Params: IdParams; Body: UpdateBody }>, reply: FastifyReply) {
+export async function update(
+  req: FastifyRequest<{ Params: IdParams; Body: UpdateBody }>,
+  reply: FastifyReply,
+) {
   const userId = req.user.sub
-  const id = Number(req.params.id)
+  const id     = Number(req.params.id)
   const { valor, dataAlvo, ativo } = req.body
 
   const meta = await service.update(userId, id, {
@@ -59,21 +63,24 @@ export async function update(req: FastifyRequest<{ Params: IdParams; Body: Updat
   return reply.send({ meta })
 }
 
-export async function remove(req: FastifyRequest<{ Params: IdParams }>, reply: FastifyReply) {
+export async function remove(
+  req: FastifyRequest<{ Params: IdParams }>,
+  reply: FastifyReply,
+) {
   const userId = req.user.sub
-  const id = Number(req.params.id)
+  const id     = Number(req.params.id)
   await service.remove(userId, id)
   return reply.status(204).send()
 }
 
 export async function progressoTreinosSemana(req: FastifyRequest, reply: FastifyReply) {
   const userId = req.user.sub
-  const data = await service.progressoTreinosSemana(userId)
+  const data   = await service.progressoTreinosSemana(userId)
   return reply.send(data)
 }
 
 export async function progressoRefeicoes(req: FastifyRequest, reply: FastifyReply) {
   const userId = req.user.sub
-  const data = await service.progressoRefeicoes(userId)
+  const data   = await service.progressoRefeicoes(userId)
   return reply.send(data)
 }

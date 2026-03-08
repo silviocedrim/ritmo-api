@@ -1,6 +1,8 @@
-import { TipoRefeicao } from '@prisma/client'
-import { prisma } from '../../../database/prisma' 
+import type { $Enums } from '@prisma/client'
+import { prisma } from '../../../database/prisma'
 import { AppError } from '../../../shared/errors/AppError'
+
+type TipoRefeicao = $Enums.TipoRefeicao  // ✅
 
 interface CreateRefeicaoDTO {
   registroDiarioId: number

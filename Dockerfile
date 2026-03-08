@@ -2,7 +2,6 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# instala pnpm
 RUN npm install -g pnpm
 
 COPY package.json pnpm-lock.yaml ./
@@ -11,10 +10,12 @@ COPY prisma.config.ts ./
 
 RUN pnpm install --frozen-lockfile
 
+# ⚠️ gera o client ANTES de compilar o TypeScript
+RUN pnpm prisma generate
+
 COPY . .
 
 RUN pnpm run build
-RUN pnpm prisma generate
 
 # ── imagem final ──────────────────────────────────────────────────────────────
 FROM node:20-alpine

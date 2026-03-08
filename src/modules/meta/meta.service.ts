@@ -1,7 +1,8 @@
-import { TipoMeta } from '@prisma/client'
-import { prisma } from '../../database/prisma' 
+import { prisma } from '../../database/prisma'
 import { AppError } from '../../shared/errors/AppError'
 import { inicioDaSemana, fimDaSemana, inicioDoDia, fimDoDia } from '../../shared/utils/date.utils'
+import type { $Enums } from '@prisma/client'
+type TipoMeta = $Enums.TipoMeta
 
 interface CreateMetaDTO {
   tipo: TipoMeta
@@ -76,10 +77,10 @@ export class MetaService {
   }
 
   async progressoTreinosSemana(userId: number) {
-    const hoje = new Date();
-    const inicio = inicioDaSemana(hoje);
-    const fim    = fimDaSemana(hoje);
-    // Todos os registros da semana com treino musculação feito
+    const hoje   = new Date()
+    const inicio = inicioDaSemana(hoje)
+    const fim    = fimDaSemana(hoje)
+
     const registros = await prisma.registroDiario.findMany({
       where: {
         userId,
@@ -87,38 +88,42 @@ export class MetaService {
         treinoMusculacao: { feito: true },
       },
       select: { id: true, data: true },
-    });
-    // Meta ativa do tipo TREINOS_POR_SEMANA
+    })
+
     const meta = await prisma.meta.findFirst({
       where: { userId, tipo: 'TREINOS_POR_SEMANA', ativo: true },
-    });
-    const feitos = registros.length;
-    const alvo   = meta ? Number(meta.valor) : null;
+    })
+
+    const feitos = registros.length
+    const alvo   = meta ? Number(meta.valor) : null
+
     return {
       feitos,
       alvo,
-      progresso: alvo ? Math.min(feitos / alvo, 1) : null,
-      cumprida:  alvo ? feitos >= alvo : false,
+      progresso:  alvo ? Math.min(feitos / alvo, 1) : null,
+      cumprida:   alvo ? feitos >= alvo : false,
       diasFeitos: registros.map((r) => r.data),
-    };
+    }
   }
+
   async progressoRefeicoes(userId: number) {
-    const hoje = new Date();
-    // ── % do dia atual ────────────────────────────────────────────────────────
+    const hoje = new Date()
+
     const registroHoje = await prisma.registroDiario.findFirst({
       where: {
         userId,
         data: { gte: inicioDoDia(hoje), lte: fimDoDia(hoje) },
       },
       include: { refeicoes: true },
-    });
-    const totalHoje  = registroHoje?.refeicoes.length ?? 0;
-    const feitasHoje = registroHoje?.refeicoes.filter((r) => r.feito).length ?? 0;
-    const percentualHoje = totalHoje > 0 ? Math.round((feitasHoje / totalHoje) * 100) : 0;
-    // ── streak (dias consecutivos com TODAS refeições feitas) ─────────────────
-    // Busca os últimos 60 dias para calcular o streak
-    const sessenta = new Date(hoje);
-    sessenta.setDate(sessenta.getDate() - 60);
+    })
+
+    const totalHoje      = registroHoje?.refeicoes.length ?? 0
+    const feitasHoje     = registroHoje?.refeicoes.filter((r: { feito: boolean }) => r.feito).length ?? 0
+    const percentualHoje = totalHoje > 0 ? Math.round((feitasHoje / totalHoje) * 100) : 0
+
+    const sessenta = new Date(hoje)
+    sessenta.setDate(sessenta.getDate() - 60)
+
     const registros = await prisma.registroDiario.findMany({
       where: {
         userId,
@@ -126,48 +131,47 @@ export class MetaService {
       },
       include: { refeicoes: true },
       orderBy: { data: 'desc' },
-    });
-    // Dia com todas refeições feitas = pelo menos 1 refeição e todas feito=true
+    })
+
     function todasFeitas(refeicoes: { feito: boolean }[]) {
-      return refeicoes.length > 0 && refeicoes.every((r) => r.feito);
+      return refeicoes.length > 0 && refeicoes.every((r: { feito: boolean }) => r.feito)
     }
-    // Constrói o streak a partir de hoje pra trás
-    let streak = 0;
-    let cursor = new Date(hoje);
-    cursor.setHours(0, 0, 0, 0);
+
+    let streak = 0
+    const cursor = new Date(hoje)
+    cursor.setHours(0, 0, 0, 0)
+
     for (let i = 0; i < 60; i++) {
-      const dataStr = cursor.toISOString().split('T')[0];
-      const reg = registros.find((r) => {
-        const d = new Date(r.data);
-        return d.toISOString().split('T')[0] === dataStr;
-      });
-      // Hoje: conta mesmo que ainda não terminou (ao menos 1 feita)
+      const dataStr = cursor.toISOString().split('T')[0]
+      const reg = registros.find((r: { data: Date; refeicoes: { feito: boolean }[] }) => {
+        const d = new Date(r.data)
+        return d.toISOString().split('T')[0] === dataStr
+      })
+
       if (i === 0) {
-        if (reg && reg.refeicoes.some((r) => r.feito)) streak++;
-        // não quebra o streak no dia atual
+        if (reg && reg.refeicoes.some((r: { feito: boolean }) => r.feito)) streak++
       } else {
-        if (!reg || !todasFeitas(reg.refeicoes)) break;
-        streak++;
+        if (!reg || !todasFeitas(reg.refeicoes)) break
+        streak++
       }
-      cursor.setDate(cursor.getDate() - 1);
+
+      cursor.setDate(cursor.getDate() - 1)
     }
-    // Meta ativa do tipo REFEICOES_CONSECUTIVAS
+
     const meta = await prisma.meta.findFirst({
       where: { userId, tipo: 'REFEICOES_CONSECUTIVAS', ativo: true },
-    });
-    const alvo = meta ? Number(meta.valor) : null;
+    })
+
+    const alvo = meta ? Number(meta.valor) : null
+
     return {
-      // streak
       streak,
-      alvoStreak:       alvo,
-      progressoStreak:  alvo ? Math.min(streak / alvo, 1) : null,
-      cumprida:         alvo ? streak >= alvo : false,
-      // dia atual
+      alvoStreak:      alvo,
+      progressoStreak: alvo ? Math.min(streak / alvo, 1) : null,
+      cumprida:        alvo ? streak >= alvo : false,
       feitasHoje,
       totalHoje,
       percentualHoje,
-    };
+    }
   }
 }
-
-
