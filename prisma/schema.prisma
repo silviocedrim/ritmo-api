@@ -36,6 +36,8 @@ model DivisaoTreino {
   letra     String
   nome      String
   descricao String?
+  emoji     String?
+  musculos  String[] // ← Adicionar isso
   ativo     Boolean  @default(true)
   createdAt DateTime @default(now())
 
