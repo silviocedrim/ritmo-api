@@ -25,6 +25,7 @@ model DivisaoTreino {
   userId Int 
   letra String 
   nome String 
+  emoji String? 
   descricao String? 
   ativo Boolean @default(true) 
   createdAt DateTime @default(now()) 
