@@ -1,14 +1,11 @@
 import { FastifyRequest, FastifyReply } from 'fastify'
-import type { $Enums } from '@prisma/client'
 import { RefeicaoService } from './refeicao.service'
-
-type TipoRefeicao = $Enums.TipoRefeicao  // ✅
 
 const service = new RefeicaoService()
 
 interface CreateBody {
   registroDiarioId: number
-  tipo: TipoRefeicao
+  configTipoRefeicaoId: number  // ✅
 }
 
 interface IdParams {

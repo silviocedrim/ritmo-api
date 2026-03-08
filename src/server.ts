@@ -13,6 +13,7 @@ import { excecaoAlimentarRoutes } from './modules/nutricao/excessao-alimentar/ex
 import { registroPesoRoutes } from './modules/saude/peso/registro-peso.routes'
 import { registroAguaRoutes } from './modules/saude/agua/registro-agua.routes'
 import { metaRoutes } from './modules/meta/meta.routes' 
+import { tipoRefeicaoRoutes } from './modules/nutricao/tipo-refeicao/tipo-refeicao.routes'
 
 export const app = Fastify({ logger: false })
 
@@ -35,6 +36,7 @@ const start = async () => {
     await app.register(registroPesoRoutes)
     await app.register(registroAguaRoutes)
     await app.register(metaRoutes)
+    await app.register(tipoRefeicaoRoutes)
 
     app.get('/health', async () => {
       return { status: 'ok', message: 'Vida Fitness API rodando!' }
