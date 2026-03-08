@@ -24,6 +24,8 @@ interface IdParams {
 
 export async function create(req: FastifyRequest<{ Body: CreateBody }>, reply: FastifyReply) {
   const userId = Number(req.user.sub)
+  console.log('Criando tipo de refeição para usuário:', userId, 'com dados:', req.body)
+  console.log('userId:', userId, typeof userId)
   const tipo = await service.create(userId, req.body)
   return reply.status(201).send({ tipo })
 }
