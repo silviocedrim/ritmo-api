@@ -23,7 +23,7 @@ interface IdParams {
 }
 
 export async function create(req: FastifyRequest<{ Body: CreateBody }>, reply: FastifyReply) {
-  const userId = req.user.sub
+  const userId = Number(req.user.sub)
   const tipo = await service.create(userId, req.body)
   return reply.status(201).send({ tipo })
 }

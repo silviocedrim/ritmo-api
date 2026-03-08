@@ -19,9 +19,13 @@ interface UpdateTipoRefeicaoDTO {
 export class TipoRefeicaoService {
 
   async create(userId: number, data: CreateTipoRefeicaoDTO) {
+    const user = await prisma.user.findUnique({ where: { id: userId } })
+    if (!user) throw new AppError('Usuário não encontrado', 404)
+    
     const existente = await prisma.configTipoRefeicao.findUnique({
       where: { userId_nome: { userId, nome: data.nome } },
     })
+
 
     if (existente) throw new AppError(`Já existe um tipo de refeição com o nome "${data.nome}"`, 409)
 
