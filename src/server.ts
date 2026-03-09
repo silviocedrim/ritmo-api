@@ -2,6 +2,7 @@ import 'dotenv/config'
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import jwt from '@fastify/jwt'
+import { prisma } from './database/prisma'
 import { AppError } from './shared/errors/AppError'
 import { authRoutes } from './modules/auth/auth.routes'
 import { divisoesRoutes } from './modules/treino/divisao/divisao.routes'
@@ -19,6 +20,21 @@ export const app = Fastify({ logger: false })
 
 const start = async () => {
   try {
+    // Conecta ao banco com retry
+    let retries = 5
+    while (retries > 0) {
+      try {
+        await prisma.$connect()
+        console.log('✅ Banco conectado!')
+        break
+      } catch (err) {
+        retries--
+        console.log(`⚠️ Banco indisponível, tentando novamente... (${retries} tentativas restantes)`)
+        if (retries === 0) throw err
+        await new Promise(res => setTimeout(res, 3000))
+      }
+    }
+
     await app.register(cors, { origin: '*' })
 
     await app.register(jwt, {
