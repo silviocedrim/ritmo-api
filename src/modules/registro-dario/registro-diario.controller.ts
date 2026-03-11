@@ -45,3 +45,22 @@ export async function remove(req: FastifyRequest<{ Params: IdParams }>, reply: F
 
   return reply.status(204).send()
 }
+
+export async function findByData(
+  req: FastifyRequest<{ Params: DataParams }>,
+  reply: FastifyReply,
+) {
+  const userId = req.user.sub
+  const data   = new Date(req.params.data)
+
+  try {
+    const registro = await service.findByData(userId, data)
+    return reply.send({ registro })
+  } catch (err: any) {
+    // AppError 404 → retorna null (sem registro no dia, não é erro crítico)
+    if (err?.statusCode === 404) {
+      return reply.send({ registro: null })
+    }
+    throw err
+  }
+}
