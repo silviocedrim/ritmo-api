@@ -85,7 +85,7 @@ export class MetaService {
       where: {
         userId,
         data: { gte: inicio, lte: fim },
-        treinoMusculacao: { feito: true },
+        treinoAtividade: { feito: true },
       },
       select: { id: true, data: true },
     })
