@@ -15,6 +15,11 @@ import { registroPesoRoutes } from './modules/saude/peso/registro-peso.routes'
 import { registroAguaRoutes } from './modules/saude/agua/registro-agua.routes'
 import { metaRoutes } from './modules/meta/meta.routes' 
 import { tipoRefeicaoRoutes } from './modules/nutricao/tipo-refeicao/tipo-refeicao.routes'
+import { userRoutes } from './modules/user/user.routes'
+import multipart from '@fastify/multipart'
+import fastifyStatic from '@fastify/static'
+import path from 'node:path'
+
 
 export const app = Fastify({ logger: false })
 
@@ -41,6 +46,16 @@ const start = async () => {
       secret: process.env.JWT_SECRET!,
     })
 
+    app.register(multipart, {
+      limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB
+      },
+    })
+    app.register(fastifyStatic, {
+      root: path.join(process.cwd(), 'uploads'),
+      prefix: '/uploads/', 
+    })
+
     // Rotas
     await app.register(authRoutes)
     await app.register(divisoesRoutes)
@@ -53,6 +68,8 @@ const start = async () => {
     await app.register(registroAguaRoutes)
     await app.register(metaRoutes)
     await app.register(tipoRefeicaoRoutes)
+    await app.register(userRoutes)
+    // await app.register(multipart)
 
     app.get('/health', async () => {
       return { status: 'ok', message: 'Vida Fitness API rodando!' }

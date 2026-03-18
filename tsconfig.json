@@ -9,7 +9,10 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "moduleResolution": "node",    
+    "baseUrl": "./src",                      // ✅ adicionado
+    "typeRoots": ["./src/@types", "./node_modules/@types"] // ✅ adicionado
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
