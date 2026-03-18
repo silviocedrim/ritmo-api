@@ -7,7 +7,7 @@ import { AppError } from './shared/errors/AppError'
 import { authRoutes } from './modules/auth/auth.routes'
 import { divisoesRoutes } from './modules/treino/divisao/divisao.routes'
 import { registroDiarioRoutes } from './modules/registro-dario/registro-diario.routes' 
-import { treinoMusculacaoRoutes } from './modules/treino/musculacao/treino-musculacao.routes'
+import { treinoAtividadeRoutes } from './modules/treino/musculacao/treino-atividade.routes'
 import { cardioRoutes } from './modules/treino/cardio/cardio.routes'
 import { refeicaoRoutes } from './modules/nutricao/refeicao/refeicao.routes'
 import { excecaoAlimentarRoutes } from './modules/nutricao/excessao-alimentar/excecao-alimentar.routes' 
@@ -45,7 +45,7 @@ const start = async () => {
     await app.register(authRoutes)
     await app.register(divisoesRoutes)
     await app.register(registroDiarioRoutes)
-    await app.register(treinoMusculacaoRoutes)
+    await app.register(treinoAtividadeRoutes)
     await app.register(cardioRoutes)
     await app.register(refeicaoRoutes)
     await app.register(excecaoAlimentarRoutes)

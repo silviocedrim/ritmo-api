@@ -7,6 +7,25 @@ datasource db {
 }
 
 // ═══════════════════════════════════════
+// ENUMS
+// ═══════════════════════════════════════
+
+enum TipoAtividade {
+  MUSCULACAO
+  FUNCIONAL
+  CROSSFIT
+  CALISTENIA
+  OUTRO
+}
+
+enum TipoMeta {
+  TREINOS_POR_SEMANA
+  REFEICOES_CONSECUTIVAS
+  AGUA_DIARIA
+  PESO_ALVO
+}
+
+// ═══════════════════════════════════════
 // USUÁRIO
 // ═══════════════════════════════════════
 
@@ -18,9 +37,9 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  divisoesTreino   DivisaoTreino[]
-  registrosDiarios RegistroDiario[]
-  metas            Meta[]
+  divisoesTreino      DivisaoTreino[]
+  registrosDiarios    RegistroDiario[]
+  metas               Meta[]
   configTiposRefeicao ConfigTipoRefeicao[]
 
   @@map("users")
@@ -37,12 +56,12 @@ model DivisaoTreino {
   nome      String
   descricao String?
   emoji     String?
-  musculos  String[] // ← Adicionar isso
+  musculos  String[]
   ativo     Boolean  @default(true)
   createdAt DateTime @default(now())
 
-  user              User               @relation(fields: [userId], references: [id])
-  treinosMusculacao TreinoMusculacao[]
+  user             User              @relation(fields: [userId], references: [id])
+  treinosAtividade TreinoAtividade[]
 
   @@unique([userId, letra])
   @@map("divisoes_treino")
@@ -60,7 +79,7 @@ model RegistroDiario {
   updatedAt DateTime @updatedAt
 
   user             User              @relation(fields: [userId], references: [id])
-  treinoMusculacao TreinoMusculacao?
+  treinoAtividade  TreinoAtividade?
   treinoCardio     TreinoCardio?
   refeicoes        Refeicao[]
   excecaoAlimentar ExcecaoAlimentar?
@@ -72,20 +91,23 @@ model RegistroDiario {
 }
 
 // ═══════════════════════════════════════
-// TREINO MUSCULAÇÃO
+// TREINO ATIVIDADE
 // ═══════════════════════════════════════
 
-model TreinoMusculacao {
-  id               Int      @id @default(autoincrement())
-  registroDiarioId Int      @unique
-  divisaoTreinoId  Int
-  feito            Boolean  @default(false)
-  createdAt        DateTime @default(now())
+model TreinoAtividade {
+  id               Int           @id @default(autoincrement())
+  registroDiarioId Int           @unique
+  tipo             TipoAtividade
+  divisaoTreinoId  Int?
+  duracaoMinutos   Int?
+  observacao       String?
+  feito            Boolean       @default(false)
+  createdAt        DateTime      @default(now())
 
   registroDiario RegistroDiario @relation(fields: [registroDiarioId], references: [id])
-  divisaoTreino  DivisaoTreino  @relation(fields: [divisaoTreinoId], references: [id])
+  divisaoTreino  DivisaoTreino? @relation(fields: [divisaoTreinoId], references: [id])
 
-  @@map("treinos_musculacao")
+  @@map("treinos_atividade")
 }
 
 // ═══════════════════════════════════════
@@ -106,35 +128,42 @@ model TreinoCardio {
 }
 
 // ═══════════════════════════════════════
+// CONFIGURAÇÃO DE TIPOS DE REFEIÇÃO
+// ═══════════════════════════════════════
+
+model ConfigTipoRefeicao {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  nome      String
+  emoji     String?
+  horario   String?
+  ordem     Int      @default(0)
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User       @relation(fields: [userId], references: [id])
+  refeicoes Refeicao[]
+
+  @@unique([userId, nome])
+  @@map("config_tipos_refeicao")
+}
+
+// ═══════════════════════════════════════
 // REFEIÇÃO
 // ═══════════════════════════════════════
 
-model ConfigTipoRefeicao { 
-  id Int @id @default(autoincrement()) 
-  userId Int 
-  nome String 
-  emoji String? 
-  horario String? 
-  ordem Int @default(0) 
-  ativo Boolean @default(true) 
-  createdAt DateTime @default(now()) 
-  updatedAt DateTime @updatedAt 
-  user User @relation(fields: [userId], references: [id]) 
-  refeicoes Refeicao[] 
-  @@unique([userId, nome]) 
-  @@map("config_tipos_refeicao") 
-}
-
 model Refeicao {
-  id               Int          @id @default(autoincrement())
-  registroDiarioId Int
-  configTipoRefeicaoId Int 
-  feito            Boolean      @default(false)
-  createdAt        DateTime     @default(now())
+  id                   Int      @id @default(autoincrement())
+  registroDiarioId     Int
+  configTipoRefeicaoId Int
+  feito                Boolean  @default(false)
+  createdAt            DateTime @default(now())
 
-  registroDiario RegistroDiario @relation(fields: [registroDiarioId], references: [id])
-  configTipoRefeicao ConfigTipoRefeicao @relation(fields: [configTipoRefeicaoId], references: [id]) 
-  @@unique([registroDiarioId, configTipoRefeicaoId]) 
+  registroDiario     RegistroDiario     @relation(fields: [registroDiarioId], references: [id])
+  configTipoRefeicao ConfigTipoRefeicao @relation(fields: [configTipoRefeicaoId], references: [id])
+
+  @@unique([registroDiarioId, configTipoRefeicaoId])
   @@map("refeicoes")
 }
 
@@ -186,13 +215,6 @@ model RegistroPeso {
 // ═══════════════════════════════════════
 // METAS
 // ═══════════════════════════════════════
-
-enum TipoMeta {
-  TREINOS_POR_SEMANA
-  REFEICOES_CONSECUTIVAS
-  AGUA_DIARIA
-  PESO_ALVO
-}
 
 model Meta {
   id        Int       @id @default(autoincrement())

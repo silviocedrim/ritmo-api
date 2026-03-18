@@ -1,16 +1,22 @@
 import { FastifyRequest, FastifyReply } from 'fastify'
-import { TreinoMusculacaoService } from './treino-musculacao.service'
+import { TreinoAtividadeService } from './treino-atividade.service' 
 
-const service = new TreinoMusculacaoService()
+const service = new TreinoAtividadeService()
 
 interface CreateBody {
   registroDiarioId: number
-  divisaoTreinoId: number
+  tipo: 'MUSCULACAO' | 'FUNCIONAL' | 'CROSSFIT' | 'CALISTENIA' | 'OUTRO'
+  divisaoTreinoId?: number
+  duracaoMinutos?: number
+  observacao?: string
   feito?: boolean
 }
 
 interface UpdateBody {
-  divisaoTreinoId: number
+  tipo?: 'MUSCULACAO' | 'FUNCIONAL' | 'CROSSFIT' | 'CALISTENIA' | 'OUTRO'
+  divisaoTreinoId?: number
+  duracaoMinutos?: number
+  observacao?: string
 }
 
 interface IdParams {
@@ -19,9 +25,16 @@ interface IdParams {
 
 export async function create(req: FastifyRequest<{ Body: CreateBody }>, reply: FastifyReply) {
   const userId = req.user.sub
-  const { registroDiarioId, divisaoTreinoId, feito } = req.body
+  const { registroDiarioId, tipo, divisaoTreinoId, duracaoMinutos, observacao, feito } = req.body
 
-  const treino = await service.create(userId, registroDiarioId, divisaoTreinoId, feito ?? false)
+  const treino = await service.create(userId, {
+    registroDiarioId,
+    tipo,
+    divisaoTreinoId,
+    duracaoMinutos,
+    observacao,
+    feito: feito ?? false,
+  })
 
   return reply.status(201).send({ treino })
 }
@@ -38,9 +51,8 @@ export async function toggleFeito(req: FastifyRequest<{ Params: IdParams }>, rep
 export async function update(req: FastifyRequest<{ Params: IdParams; Body: UpdateBody }>, reply: FastifyReply) {
   const userId = req.user.sub
   const id = Number(req.params.id)
-  const { divisaoTreinoId } = req.body
 
-  const treino = await service.update(userId, id, divisaoTreinoId)
+  const treino = await service.update(userId, id, req.body)
 
   return reply.send({ treino })
 }
