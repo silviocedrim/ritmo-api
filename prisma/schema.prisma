@@ -25,6 +25,8 @@ enum TipoMeta {
   PESO_ALVO
 }
 
+
+
 // ═══════════════════════════════════════
 // USUÁRIO
 // ═══════════════════════════════════════
@@ -228,6 +230,26 @@ model Meta {
   updatedAt DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id])
+  ciclos MetaCiclo[]
 
   @@map("metas")
+}
+// ═══════════════════════════════════════
+// META CICLO
+// ═══════════════════════════════════════
+
+model MetaCiclo {
+  id          Int       @id @default(autoincrement())
+  metaId      Int
+  ciclo       Int       // 1º, 2º, 3º...
+  iniciadoEm  DateTime  @default(now())
+  concluidoEm DateTime?
+  quebradoEm  DateTime?
+  createdAt   DateTime  @default(now())
+  valorAlvo   Float?
+
+  meta Meta @relation(fields: [metaId], references: [id], onDelete: Cascade)
+
+  @@unique([metaId, ciclo])
+  @@map("meta_ciclos")
 }

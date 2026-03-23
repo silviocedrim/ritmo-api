@@ -1,6 +1,10 @@
+// treino-atividade.service.ts
 import { TipoAtividade } from '@prisma/client'
 import { prisma } from '../../../database/prisma'
 import { AppError } from '../../../shared/errors/AppError'
+import { MetaService } from 'modules/meta/meta.service' 
+
+const metaService = new MetaService()
 
 interface CreateDTO {
   registroDiarioId: number
@@ -23,16 +27,13 @@ export class TreinoAtividadeService {
   async create(userId: number, data: CreateDTO) {
     const { registroDiarioId, tipo, divisaoTreinoId, duracaoMinutos, observacao, feito } = data
 
-    // Valida registro diário
     const registro = await prisma.registroDiario.findFirst({
       where: { id: registroDiarioId, userId },
     })
     if (!registro) throw new AppError('Registro diário não encontrado', 404)
 
-    // Valida regra: musculação exige divisão, outros não aceitam divisão
     this.validarDivisao(tipo, divisaoTreinoId)
 
-    // Valida divisão se fornecida
     if (divisaoTreinoId) {
       const divisao = await prisma.divisaoTreino.findFirst({
         where: { id: divisaoTreinoId, userId, ativo: true },
@@ -40,16 +41,22 @@ export class TreinoAtividadeService {
       if (!divisao) throw new AppError('Divisão de treino não encontrada', 404)
     }
 
-    // Garante apenas um treino por dia
     const existente = await prisma.treinoAtividade.findUnique({
       where: { registroDiarioId },
     })
     if (existente) throw new AppError('Já existe um treino registrado para esse dia', 409)
 
-    return prisma.treinoAtividade.create({
+    const treino = await prisma.treinoAtividade.create({
       data: { registroDiarioId, tipo, divisaoTreinoId, duracaoMinutos, observacao, feito },
       include: { divisaoTreino: true },
     })
+
+    // ✅ Verifica metas apenas se o treino foi marcado como feito
+    if (feito) {
+      await metaService.verificarCicloTreinosSemana(userId)
+    }
+
+    return treino
   }
 
   async toggleFeito(userId: number, id: number) {
@@ -58,11 +65,16 @@ export class TreinoAtividadeService {
     })
     if (!treino) throw new AppError('Treino não encontrado', 404)
 
-    return prisma.treinoAtividade.update({
+    const atualizado = await prisma.treinoAtividade.update({
       where: { id },
       data: { feito: !treino.feito },
       include: { divisaoTreino: true },
     })
+
+    // ✅ Verifica metas sempre que o estado muda (tanto ao marcar quanto desmarcar)
+    await metaService.verificarCicloTreinosSemana(userId)
+
+    return atualizado
   }
 
   async update(userId: number, id: number, data: UpdateDTO) {
@@ -71,10 +83,11 @@ export class TreinoAtividadeService {
     })
     if (!treino) throw new AppError('Treino não encontrado', 404)
 
-    const tipoFinal = data.tipo ?? treino.tipo
-    const divisaoFinal = 'divisaoTreinoId' in data ? data.divisaoTreinoId : treino.divisaoTreinoId ?? undefined
+    const tipoFinal    = data.tipo ?? treino.tipo
+    const divisaoFinal = 'divisaoTreinoId' in data
+      ? data.divisaoTreinoId
+      : treino.divisaoTreinoId ?? undefined
 
-    // Revalida regra ao atualizar
     this.validarDivisao(tipoFinal, divisaoFinal)
 
     if (divisaoFinal) {
@@ -84,13 +97,14 @@ export class TreinoAtividadeService {
       if (!divisao) throw new AppError('Divisão de treino não encontrada', 404)
     }
 
+    // update não muda o campo feito, então não afeta metas
     return prisma.treinoAtividade.update({
       where: { id },
       data: {
-        tipo: tipoFinal,
+        tipo:            tipoFinal,
         divisaoTreinoId: divisaoFinal ?? null,
-        duracaoMinutos: data.duracaoMinutos,
-        observacao: data.observacao,
+        duracaoMinutos:  data.duracaoMinutos,
+        observacao:      data.observacao,
       },
       include: { divisaoTreino: true },
     })
@@ -103,6 +117,9 @@ export class TreinoAtividadeService {
     if (!treino) throw new AppError('Treino não encontrado', 404)
 
     await prisma.treinoAtividade.delete({ where: { id } })
+
+    // ✅ Ao remover, reavalia pois pode ter quebrado uma meta
+    await metaService.verificarCicloTreinosSemana(userId)
   }
 
   // ─── Helpers ────────────────────────────────────────────────────────────────

@@ -6,6 +6,6 @@ export async function registroAguaRoutes(app: FastifyInstance) {
   app.addHook('onRequest', authenticate)
 
   app.post('/saude/agua', create)
-  app.get('/saude/agua', listByRegistro)       // ?registroDiarioId=1
+  app.get('/saude/agua', listByRegistro)      
   app.delete('/saude/agua/:id', remove)
 }

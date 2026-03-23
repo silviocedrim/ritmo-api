@@ -1,9 +1,13 @@
+// refeicao.service.ts
 import { prisma } from '../../../database/prisma'
 import { AppError } from '../../../shared/errors/AppError'
+import { MetaService } from 'modules/meta/meta.service' 
+
+const metaService = new MetaService()
 
 interface CreateRefeicaoDTO {
   registroDiarioId: number
-  configTipoRefeicaoId: number  // ✅ substituiu TipoRefeicao enum
+  configTipoRefeicaoId: number
 }
 
 export class RefeicaoService {
@@ -14,7 +18,6 @@ export class RefeicaoService {
     })
     if (!registro) throw new AppError('Registro diário não encontrado', 404)
 
-    // garante que o tipo pertence ao usuário
     const tipo = await prisma.configTipoRefeicao.findFirst({
       where: { id: data.configTipoRefeicaoId, userId, ativo: true },
     })
@@ -23,20 +26,25 @@ export class RefeicaoService {
     const existente = await prisma.refeicao.findUnique({
       where: {
         registroDiarioId_configTipoRefeicaoId: {
-          registroDiarioId: data.registroDiarioId,
+          registroDiarioId:    data.registroDiarioId,
           configTipoRefeicaoId: data.configTipoRefeicaoId,
         },
       },
     })
     if (existente) throw new AppError(`Já existe uma refeição "${tipo.nome}" para esse dia`, 409)
 
-    return prisma.refeicao.create({
+    const refeicao = await prisma.refeicao.create({
       data: {
-        registroDiarioId: data.registroDiarioId,
+        registroDiarioId:    data.registroDiarioId,
         configTipoRefeicaoId: data.configTipoRefeicaoId,
       },
       include: { configTipoRefeicao: true },
     })
+
+    // ✅ Refeição criada já começa como não feita — não afeta metas ainda
+    // (a verificação ocorre no toggleFeito)
+
+    return refeicao
   }
 
   async listByRegistro(userId: number, registroDiarioId: number) {
@@ -58,11 +66,16 @@ export class RefeicaoService {
     })
     if (!refeicao) throw new AppError('Refeição não encontrada', 404)
 
-    return prisma.refeicao.update({
+    const atualizada = await prisma.refeicao.update({
       where: { id },
       data: { feito: !refeicao.feito },
       include: { configTipoRefeicao: true },
     })
+
+    // ✅ Sempre reavalia ao mudar estado (marcar ou desmarcar)
+    await metaService.verificarCicloRefeicoes(userId)
+
+    return atualizada
   }
 
   async remove(userId: number, id: number) {
@@ -72,5 +85,8 @@ export class RefeicaoService {
     if (!refeicao) throw new AppError('Refeição não encontrada', 404)
 
     await prisma.refeicao.delete({ where: { id } })
+
+    // ✅ Ao remover, reavalia pois pode ter quebrado uma meta
+    await metaService.verificarCicloRefeicoes(userId)
   }
 }
