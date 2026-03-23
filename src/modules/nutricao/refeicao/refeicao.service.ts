@@ -1,7 +1,7 @@
 // refeicao.service.ts
 import { prisma } from '../../../database/prisma'
 import { AppError } from '../../../shared/errors/AppError'
-import { MetaService } from 'modules/meta/meta.service' 
+import { MetaService } from '../../meta/meta.service' 
 
 const metaService = new MetaService()
 
